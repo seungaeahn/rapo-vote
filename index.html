@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>라포 활동 투표</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans KR', sans-serif; background: #0f0e17; color: #fffffe; min-height: 100vh; padding: 32px 20px 60px; }
+  body::before { content: ''; position: fixed; top: -200px; left: -200px; width: 600px; height: 600px; background: radial-gradient(circle, rgba(255,140,66,0.12) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+  .container { max-width: 560px; margin: 0 auto; position: relative; z-index: 1; }
+  header { text-align: center; margin-bottom: 32px; }
+  .emoji-big { font-size: 52px; display: block; margin-bottom: 10px; }
+  h1 { font-weight: 800; font-size: 30px; color: #ff8c42; margin-bottom: 6px; letter-spacing: -1px; }
+  .subtitle { color: #a7a9be; font-size: 13px; }
+  .status-bar { display: flex; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: #6a6a8a; margin-bottom: 16px; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #3a3a5a; transition: background 0.3s; }
+  .status-dot.connected { background: #4caf50; box-shadow: 0 0 6px rgba(76,175,80,0.5); }
+  .status-dot.error { background: #f44336; }
+  .name-box { display: flex; align-items: center; gap: 10px; background: #1a1a2e; border-radius: 14px; padding: 12px 18px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.06); }
+  .name-label { font-size: 13px; color: #a7a9be; white-space: nowrap; }
+  input.name-input { flex: 1; background: transparent; border: none; border-bottom: 1.5px solid rgba(255,255,255,0.12); border-radius: 0; padding: 3px 0; color: #fffffe; font-family: 'Noto Sans KR', sans-serif; font-size: 14px; outline: none; transition: border-bottom-color 0.2s; }
+  input.name-input:focus { border-bottom-color: #ff8c42; }
+  .tabs { display: flex; gap: 6px; background: #1a1a2e; border-radius: 16px; padding: 5px; margin-bottom: 24px; }
+  .tab { flex: 1; padding: 10px; border: none; border-radius: 12px; background: transparent; color: #a7a9be; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .tab.active { background: #ff8c42; color: #0f0e17; }
+  .input-box { background: #1a1a2e; border-radius: 18px; padding: 20px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.06); }
+  .input-label { font-size: 12px; color: #a7a9be; margin-bottom: 10px; font-weight: 600; }
+  .input-row { display: flex; gap: 8px; align-items: flex-end; }
+  textarea#ideaInput { flex: 1; background: #0f0e17; border: 1.5px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 16px; color: #fffffe; font-family: 'Noto Sans KR', sans-serif; font-size: 15px; outline: none; resize: none; min-height: 90px; line-height: 1.6; transition: border-color 0.2s; }
+  textarea#ideaInput:focus { border-color: #ff8c42; }
+  textarea#ideaInput::placeholder { color: #3a3a5a; }
+  .btn-add { background: #ff8c42; border: none; border-radius: 12px; padding: 11px 18px; color: #0f0e17; font-size: 22px; font-weight: 700; cursor: pointer; transition: transform 0.15s, background 0.2s; line-height: 1; }
+  .btn-add:hover { background: #ffaa6e; transform: scale(1.06); }
+  .btn-add:active { transform: scale(0.95); }
+  .idea-card { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 14px 18px; display: flex; align-items: center; gap: 12px; margin-bottom: 10px; animation: fadeUp 0.28s ease; transition: border-color 0.2s; }
+  .idea-card:hover { border-color: rgba(255,140,66,0.25); }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .idea-text { flex: 1; font-size: 15px; font-weight: 600; white-space: pre-wrap; word-break: break-word; }
+  .idea-by { font-size: 11px; color: #6a6a8a; margin-top: 2px; }
+  .del-btn { background: transparent; border: none; color: #2a2a4a; font-size: 15px; cursor: pointer; padding: 4px 6px; border-radius: 6px; transition: color 0.2s; flex-shrink: 0; }
+  .del-btn:hover { color: #ff6b6b; }
+  .vote-card { background: #1a1a2e; border: 1px solid rgba(255,255,255,0.06); border-radius: 14px; padding: 14px 18px; margin-bottom: 10px; animation: fadeUp 0.28s ease; }
+  .vote-card.top { border-color: rgba(255,200,50,0.4); background: linear-gradient(135deg,#1a1a2e,#1f1710); }
+  .vote-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .rank { width: 26px; height: 26px; border-radius: 50%; background: rgba(255,140,66,0.12); color: #ff8c42; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .rank.gold { background: #ffd700; color: #0f0e17; }
+  .vote-text { flex: 1; font-size: 15px; font-weight: 600; white-space: pre-wrap; word-break: break-word; }
+  .vote-btn { display: flex; flex-direction: column; align-items: center; gap: 2px; background: rgba(255,140,66,0.08); border: 1.5px solid rgba(255,140,66,0.2); border-radius: 12px; padding: 7px 14px; cursor: pointer; transition: all 0.2s; color: #ff8c42; min-width: 52px; flex-shrink: 0; }
+  .vote-btn:hover { background: rgba(255,140,66,0.18); }
+  .vote-btn.voted { background: #ff8c42; border-color: #ff8c42; color: #0f0e17; }
+  .vote-emoji { font-size: 17px; line-height: 1; }
+  .vote-count { font-size: 13px; font-weight: 700; }
+  .bar-bg { height: 5px; background: rgba(255,255,255,0.05); border-radius: 99px; overflow: hidden; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg,#ff8c42,#ffc86e); border-radius: 99px; transition: width 0.5s ease; }
+  .voters-list { font-size: 11px; color: #6a6a8a; margin-top: 6px; }
+  .empty { text-align: center; padding: 40px 20px; color: #3a3a5a; font-size: 14px; }
+  .empty-icon { font-size: 40px; margin-bottom: 10px; }
+  .btn-reset { width: 100%; margin-top: 16px; padding: 12px; background: transparent; border: 1.5px solid rgba(255,255,255,0.08); border-radius: 12px; color: #6a6a8a; font-family: 'Noto Sans KR', sans-serif; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+  .btn-reset:hover { border-color: #ff8c42; color: #ff8c42; }
+  .vote-note { text-align: center; font-size: 12px; color: #4a4a6a; margin-bottom: 18px; }
+  .loading { text-align: center; padding: 30px; color: #6a6a8a; font-size: 13px; }
+  .spinner { width: 28px; height: 28px; border: 2px solid rgba(255,140,66,0.2); border-top-color: #ff8c42; border-radius: 50%; animation: spin 0.7s linear infinite; margin: 0 auto 10px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <span class="emoji-big">🎯</span>
+    <h1>라포 활동 투표</h1>
+    <p class="subtitle">자유롭게 제안하고 마음에 드는 것에 투표해요</p>
+  </header>
+
+  <div class="status-bar">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">연결 중...</span>
+  </div>
+
+  <div class="name-box">
+    <span class="name-label">👤 내 이름</span>
+    <input class="name-input" id="nameInput" type="text" placeholder="이름 입력 (투표 전 필수!)" maxlength="12" />
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" id="tabIdea" onclick="switchTab('idea')">💡 아이디어 제안</button>
+    <button class="tab"        id="tabVote" onclick="switchTab('vote')">🗳️ 투표하기</button>
+  </div>
+
+  <div id="ideaPhase">
+    <div class="input-box">
+      <div class="input-label">✨ 하고 싶은 활동을 적어주세요 <span style="font-weight:400;opacity:0.5">(Ctrl+Enter로 추가)</span></div>
+      <div class="input-row">
+        <textarea id="ideaInput" placeholder="예) 방탈출, 볼링, 보드게임카페&#10;자유롭게 설명도 적어주세요!" maxlength="200"></textarea>
+        <button class="btn-add" onclick="addIdea()">+</button>
+      </div>
+    </div>
+    <div id="ideasList"><div class="loading"><div class="spinner"></div>불러오는 중...</div></div>
+  </div>
+
+  <div id="votePhase" style="display:none;">
+    <p class="vote-note">👆 마음에 드는 활동에 투표하세요 (중복 가능)</p>
+    <div id="voteList"><div class="loading"><div class="spinner"></div>불러오는 중...</div></div>
+    <button class="btn-reset" onclick="resetVotes()">🔄 투표 초기화</button>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+import { getDatabase, ref, push, remove, update, onValue } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA0lB-_Qov1kaTbvR4s__mFeJ0xjbjBi9A",
+  authDomain: "rapo-vote.firebaseapp.com",
+  databaseURL: "https://rapo-vote-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "rapo-vote",
+  storageBucket: "rapo-vote.firebasestorage.app",
+  messagingSenderId: "37250174974",
+  appId: "1:37250174974:web:ed6ed1f07c6d0f75813aaf"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const ideasRef = ref(db, 'ideas');
+
+let ideasCache = {};
+let currentTab = 'idea';
+
+function setStatus(ok, msg) {
+  document.getElementById('statusDot').className = 'status-dot ' + (ok ? 'connected' : 'error');
+  document.getElementById('statusText').textContent = msg;
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function getName(){ return document.getElementById('nameInput').value.trim(); }
+function safeName(n){ return n.replace(/[.#[\]/]/g,'_'); }
+
+// 실시간 리스너 — 누가 바꿔도 모두에게 즉시 반영
+onValue(ideasRef, (snapshot) => {
+  ideasCache = snapshot.val() || {};
+  setStatus(true, '실시간 연결됨 ✓');
+  currentTab === 'idea' ? renderIdeas() : renderVotes();
+}, () => setStatus(false, '연결 오류'));
+
+window.switchTab = function(t) {
+  currentTab = t;
+  document.getElementById('ideaPhase').style.display = t==='idea' ? '' : 'none';
+  document.getElementById('votePhase').style.display  = t==='vote' ? '' : 'none';
+  document.getElementById('tabIdea').className = 'tab'+(t==='idea'?' active':'');
+  document.getElementById('tabVote').className = 'tab'+(t==='vote'?' active':'');
+  t==='idea' ? renderIdeas() : renderVotes();
+};
+
+window.addIdea = function() {
+  const inp = document.getElementById('ideaInput');
+  const txt = inp.value.trim();
+  if(!txt){ inp.focus(); return; }
+  const name = getName();
+  if(!name){ alert('이름을 먼저 입력해주세요!'); document.getElementById('nameInput').focus(); return; }
+  push(ideasRef, { text: txt, by: name, votes: 0, voters: {} });
+  inp.value = '';
+  inp.focus();
+};
+
+document.getElementById('ideaInput').addEventListener('keydown', e=>{
+  if(e.key==='Enter' && (e.ctrlKey||e.metaKey)) window.addIdea();
+});
+
+window.deleteIdea = function(key) {
+  if(!confirm('삭제할까요?')) return;
+  remove(ref(db, 'ideas/'+key));
+};
+
+window.voteIdea = function(key) {
+  const me = getName();
+  if(!me){ alert('이름을 먼저 입력해주세요!'); document.getElementById('nameInput').focus(); return; }
+  const idea = ideasCache[key];
+  if(!idea) return;
+  const voters = idea.voters || {};
+  const sm = safeName(me);
+  const voted = !!voters[sm];
+  const updates = {};
+  updates[`ideas/${key}/voters/${sm}`] = voted ? null : true;
+  updates[`ideas/${key}/votes`] = (idea.votes||0) + (voted ? -1 : 1);
+  update(ref(db), updates);
+};
+
+window.resetVotes = function() {
+  if(!confirm('모든 투표를 초기화할까요?')) return;
+  const updates = {};
+  Object.keys(ideasCache).forEach(k => {
+    updates[`ideas/${k}/votes`] = 0;
+    updates[`ideas/${k}/voters`] = {};
+  });
+  update(ref(db), updates);
+};
+
+function renderIdeas() {
+  const el = document.getElementById('ideasList');
+  const keys = Object.keys(ideasCache);
+  if(!keys.length){
+    el.innerHTML = '<div class="empty"><div class="empty-icon">💭</div>첫 번째 아이디어를 제안해보세요!</div>';
+    return;
+  }
+  el.innerHTML = keys.map(key => {
+    const i = ideasCache[key];
+    return `<div class="idea-card">
+      <div style="flex:1;min-width:0">
+        <div class="idea-text">${esc(i.text)}</div>
+        <div class="idea-by">by ${esc(i.by)}</div>
+      </div>
+      <button class="del-btn" onclick="deleteIdea('${key}')">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function renderVotes() {
+  const me = getName();
+  const sm = safeName(me);
+  const el = document.getElementById('voteList');
+  const entries = Object.entries(ideasCache);
+  if(!entries.length){
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📋</div>아이디어 탭에서 먼저 제안해주세요!</div>';
+    return;
+  }
+  const sorted = entries.sort((a,b)=>(b[1].votes||0)-(a[1].votes||0));
+  const max = Math.max(1, sorted[0]?.[1]?.votes || 0);
+  el.innerHTML = sorted.map(([key, idea], idx) => {
+    const votes = idea.votes || 0;
+    const voters = idea.voters || {};
+    const voted = sm && !!voters[sm];
+    const isTop = idx===0 && votes>0;
+    const pct = Math.round((votes/max)*100);
+    const voterNames = Object.keys(voters).map(v=>v.replace(/_/g,' ')).join(', ');
+    return `<div class="vote-card ${isTop?'top':''}">
+      <div class="vote-row">
+        <div class="rank ${isTop?'gold':''}">${isTop?'🥇':idx+1}</div>
+        <div class="vote-text">${esc(idea.text)}</div>
+        <button class="vote-btn ${voted?'voted':''}" onclick="voteIdea('${key}')">
+          <span class="vote-emoji">👍</span>
+          <span class="vote-count">${votes}</span>
+        </button>
+      </div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
+      ${voterNames ? `<div class="voters-list">👤 ${esc(voterNames)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+</script>
+</body>
+</html>
